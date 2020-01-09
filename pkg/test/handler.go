@@ -2,6 +2,7 @@ package test
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -37,7 +38,11 @@ func Handler(path string, dir bool, showOutput bool) {
 }
 
 func runner(file string, showOutput bool) {
-	criteria := readJSON(file)
+	criteria, err := readCriteriaFile(file)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	// Pre Tasks
 	if len(criteria.Target.PreTasks) >= 1 {
@@ -61,28 +66,39 @@ func runner(file string, showOutput bool) {
 
 }
 
-// readJSON will read the json files from the specified path(s).
-func readJSON(input string) testCriteria {
-	var criteria testCriteria
+// readCriteriaFile attempts to extract testing criteria from a file
+func readCriteriaFile(filePath string) (testCriteria, error) {
+	filePath = strings.TrimSpace(filePath)
 
-	if !strings.Contains(input, ".json") {
-		err := json.Unmarshal([]byte(input), &criteria)
-		if err != nil {
-			log.Fatal("Failed to unmarshal json.")
-		}
-		return criteria
+	if len(filePath) == 0 {
+		return testCriteria{}, errors.New("Invalid path for a critera file: path cannot be empty or whitespace")
 	}
 
-	content, err := ioutil.ReadFile(input)
+	absolutePath, err := filepath.Abs(filePath)
 	if err != nil {
-		log.Fatal("Failure to read file.")
+		return testCriteria{}, fmt.Errorf("Could not resolve absolute path of file %q: %w", filePath, err)
 	}
-	err = json.Unmarshal([]byte(content), &criteria)
+
+	info, err := os.Stat(absolutePath)
+	if os.IsNotExist(err) {
+		return testCriteria{}, fmt.Errorf("Path %q could not be found - double check it exist and you have read access: %w", filePath, err)
+
+	}
+
+	if info.IsDir() {
+		return testCriteria{}, errors.New("%q is a directory and not a file")
+	}
+
+	encodedJSON, err := ioutil.ReadFile(absolutePath)
 	if err != nil {
-		fmt.Println("Failed to unmarshal json.")
-		os.Exit(1)
+		return testCriteria{}, fmt.Errorf("Couldn't read content from file %q: %w", absolutePath, err)
 	}
 
-	return criteria
+	var target testCriteria
+	err = json.Unmarshal([]byte(encodedJSON), &target)
+	if err != nil {
+		return testCriteria{}, fmt.Errorf("Error decoding JSON from file %q: %w", absolutePath, err)
+	}
 
+	return target, nil
 }
