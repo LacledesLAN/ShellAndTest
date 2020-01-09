@@ -1,0 +1,24 @@
+{
+	"target": {
+        "pre-tasks": ["go version", "ping google.com", "curl -sILk lacledeslan.com"],
+        "execute": "docker run -i ubuntu /bin/bash",
+		"should-echo-delay": 30,
+		"timeout": 90,
+        "post-tasks": ["curl -sILk lacledeslan.com", "go help"]
+	},
+	"should-have": [
+		"does not have a stable",
+        "apt is a commandline"
+	],
+	"should-lack": [
+		"not found"
+	],
+	"should-echo": [{
+		"command": "apt",
+		"should-have": "Super Cow Powers"
+    },
+    {
+        "command": "apt moo",
+        "should-have": "Have you mooed today?"
+    }]
+}
