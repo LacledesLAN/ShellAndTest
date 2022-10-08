@@ -1,0 +1,27 @@
+---
+target:
+  pre_tasks:
+    - 'go version'
+    - 'ping -c3 google.com'
+    - 'curl -sILk lacledeslan.com'
+  execute: docker run --rm -it ubuntu /bin/bash
+  should_echo_delay: 10
+  timeout: 90
+  post_tasks:
+    - 'curl -sILk lacledeslan.com'
+    - 'go help'
+
+should_have:
+  - 'apt is a commandline package manager and provides commands for'
+  - 'apt is a commandline'
+
+should_lack:
+  - 'not found'
+
+should_echo:
+  - command: 'apt'
+    should_have: 'Super Cow Powers'
+
+  - command: 'apt moo'
+    should_have: 'Have you mooed today?'
+

@@ -48,3 +48,6 @@ ehthumbs_vista.db
 Thumbs.db
 $RECYCLE.BIN/
 *.lnk
+
+shellandtest
+*.log
